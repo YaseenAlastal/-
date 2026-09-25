@@ -20,7 +20,7 @@ class MeezanApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1B4D3E),
           primary: const Color(0xFF1B4D3E),
-          surface: const Color(0xFFF9FBF9),
+          surface: const Color(0xFFF8FAF9),
         ),
       ),
       home: const MainTabScreen(),
@@ -28,12 +28,14 @@ class MeezanApp extends StatelessWidget {
   }
 }
 
+// نموذج العمل أو الذنب
 class ActionItem {
   final String id;
   final String title;
   final int points;
   final IconData icon;
-  final String category;
+  final String category; // 'daily', 'habits_sins', 'seasons', 'major', 'dhikr'
+  final String? hadithProof;
   final String? remedy;
   bool isCompleted;
 
@@ -43,6 +45,7 @@ class ActionItem {
     required this.points,
     required this.icon,
     required this.category,
+    this.hadithProof,
     this.remedy,
     this.isCompleted = false,
   });
@@ -58,61 +61,342 @@ class MainTabScreen extends StatefulWidget {
 class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // الرصيد التراكمي المحفوظ على مدار الزمن
   int _totalGoodPoints = 0;
   int _totalBadPoints = 0;
 
   int get _lifetimeNetScore => _totalGoodPoints - _totalBadPoints;
 
+  // بنك الأعمال والعبادات والأدعية والسيئات
   final List<ActionItem> _allActions = [
-    // 1. اليومي والأسبوعي
-    ActionItem(id: 'd1', title: 'صلاة الفجر في وقتها', points: 15, icon: Icons.alarm, category: 'daily'),
-    ActionItem(id: 'd2', title: 'الصلوات المفروضة جماعة وفي وقتها', points: 40, icon: Icons.mosque, category: 'daily'),
-    ActionItem(id: 'd3', title: 'السنن الرواتب والشفع والوتر', points: 15, icon: Icons.spa, category: 'daily'),
-    ActionItem(id: 'd4', title: 'صلاة الضحى', points: 8, icon: Icons.wb_sunny_outlined, category: 'daily'),
-    ActionItem(id: 'd5', title: 'ورد القرآن اليومي (حزب أو جزء)', points: 15, icon: Icons.menu_book, category: 'daily'),
-    ActionItem(id: 'd6', title: 'أذكار الصباح والمساء', points: 12, icon: Icons.wb_twilight, category: 'daily'),
-    ActionItem(id: 'd7', title: 'الاستغفار والصلاة على النبي (100 مرة)', points: 10, icon: Icons.repeat, category: 'daily'),
-    ActionItem(id: 'd8', title: 'بر الوالدين والإحسان لهما', points: 25, icon: Icons.favorite, category: 'daily'),
-    ActionItem(id: 'd9', title: 'صدقة مالية أو إطعام محتاج', points: 15, icon: Icons.volunteer_activism, category: 'daily'),
-    ActionItem(id: 'd10', title: 'إتقان العمل والوظيفة بأمانة', points: 15, icon: Icons.work_outline, category: 'daily'),
-    ActionItem(id: 'd11', title: 'كظم الغيظ وحفظ اللسان وغض البصر', points: 15, icon: Icons.visibility_off_outlined, category: 'daily'),
-    ActionItem(id: 'd12', title: 'التبكير لصلاة الجمعة وسورة الكهف', points: 30, icon: Icons.auto_awesome, category: 'daily'),
+    // ----------------- 1. الفرائض واليوميات الأساسية -----------------
+    ActionItem(
+      id: 'd_fajr',
+      title: 'صلاة الفجر في وقتها',
+      points: 80,
+      icon: Icons.wb_twilight,
+      category: 'daily',
+      hadithProof: '«من صلى الصبح فهو في ذمة الله» (صحيح مسلم)',
+    ),
+    ActionItem(
+      id: 'd_cong_prayers',
+      title: 'أداء الصلوات الخمس في جماعة المسجد',
+      points: 135,
+      icon: Icons.mosque,
+      category: 'daily',
+      hadithProof: '«صلاة الجماعة تفضل صلاة الفذ بسبع وعشرين درجة» (متفق عليه)',
+    ),
+    ActionItem(
+      id: 'd_solo_prayers',
+      title: 'الصلوات المفروضة منفردة في وقتها',
+      points: 50,
+      icon: Icons.check_circle_outline,
+      category: 'daily',
+      hadithProof: '«أحب الأعمال إلى الله الصلاة لوقتها» (متفق عليه)',
+    ),
+    ActionItem(
+      id: 'd_sunan',
+      title: 'السنن الرواتب (12 ركعة يومياً)',
+      points: 30,
+      icon: Icons.nature_people,
+      category: 'daily',
+      hadithProof: '«بُنِيَ له بيت في الجنة» (صحيح مسلم)',
+    ),
+    ActionItem(
+      id: 'd_night_prayer',
+      title: 'قيام الليل والشفع والوتر',
+      points: 60,
+      icon: Icons.nights_stay,
+      category: 'daily',
+      hadithProof: '«أفضل الصلاة بعد الفريضة صلاة الليل» (صحيح مسلم)',
+    ),
+    ActionItem(
+      id: 'd_quran',
+      title: 'ورد تلاوة القرآن بتدبر (جزء أو حزب)',
+      points: 40,
+      icon: Icons.menu_book,
+      category: 'daily',
+      hadithProof: '«من قرأ حرفاً فله به حسنة والحسنة بعشر أمثالها» (صحيح الترمذي)',
+    ),
+    ActionItem(
+      id: 'd_parents',
+      title: 'بر الوالدين وخدمتهما وإدخال السرور عليهما',
+      points: 70,
+      icon: Icons.favorite,
+      category: 'daily',
+      hadithProof: '«رضا الرب في رضا الوالد» (صحيح الترمذي)',
+    ),
+    ActionItem(
+      id: 'd_charity',
+      title: 'صدقة يومية أو إطعام محتاج أو سقي ماء',
+      points: 40,
+      icon: Icons.volunteer_activism,
+      category: 'daily',
+      hadithProof: '«والصدقة تطفئ الخطيئة كما يطفئ الماء النار» (صحيح الترمذي)',
+    ),
+    ActionItem(
+      id: 'd_work_honesty',
+      title: 'إتقان العمل الوظيفي والصدق التام بالأمانة',
+      points: 35,
+      icon: Icons.work_outline,
+      category: 'daily',
+      hadithProof: '«إن الله يحب إذا عمل أحدكم عملاً أن يتقنه» (صحيح الجامع)',
+    ),
+    ActionItem(
+      id: 'd_gaze_lowering',
+      title: 'غض البصر عن المحرمات بمجاهدة نفس',
+      points: 30,
+      icon: Icons.visibility_off,
+      category: 'daily',
+      hadithProof: '«اصرف بصرك» (صحيح مسلم)',
+    ),
 
-    // 2. المواسم والنفحات
-    ActionItem(id: 's1', title: 'صيام يوم من رمضان', points: 60, icon: Icons.nights_stay, category: 'seasons'),
-    ActionItem(id: 's2', title: 'إحياء ليلة القدر / العشر الأواخر', points: 250, icon: Icons.star_border_purple500, category: 'seasons'),
-    ActionItem(id: 's3', title: 'صيام يوم عرفة', points: 120, icon: Icons.cloud_done_outlined, category: 'seasons'),
-    ActionItem(id: 's4', title: 'صيام يوم عاشوراء', points: 80, icon: Icons.shield, category: 'seasons'),
-    ActionItem(id: 's5', title: 'أداء فريضة الحج (حج مبرور)', points: 400, icon: Icons.apartment, category: 'seasons'),
-    ActionItem(id: 's6', title: 'أداء مناسك العمرة', points: 120, icon: Icons.temple_buddhist, category: 'seasons'),
-    ActionItem(id: 's7', title: 'ذبح الأضحية وتوزيعها في العيد', points: 100, icon: Icons.card_giftcard, category: 'seasons'),
-    ActionItem(id: 's8', title: 'إخراج زكاة الفطر', points: 30, icon: Icons.redeem, category: 'seasons'),
+    // ----------------- 2. كنز الأذكار والأدعية الثقيلة في الميزان -----------------
+    ActionItem(
+      id: 'dh_1',
+      title: 'سبحان الله وبحمده (100 مرة)',
+      points: 100,
+      icon: Icons.auto_awesome,
+      category: 'dhikr',
+      hadithProof: '«حُطّت خطاياه وإن كانت مثل زبد البحر» (متفق عليه)',
+    ),
+    ActionItem(
+      id: 'dh_2',
+      title: 'سبحان الله وبحمده، سبحان الله العظيم (100 مرة)',
+      points: 100,
+      icon: Icons.balance,
+      category: 'dhikr',
+      hadithProof: '«كلمتان حبيبتان إلى الرحمن خفيفتان على اللسان ثقيلتان في الميزان» (متفق عليه)',
+    ),
+    ActionItem(
+      id: 'dh_3',
+      title: 'سيد الاستغفار مع اليقين به (صباحاً ومساءً)',
+      points: 120,
+      icon: Icons.shield,
+      category: 'dhikr',
+      hadithProof: '«من قالها موقناً بها فمات من يومه أو ليلته دخل الجنة» (صحيح البخاري)',
+    ),
+    ActionItem(
+      id: 'dh_4',
+      title: 'لا إله إلا الله وحده لا شريك له.. (100 مرة)',
+      points: 150,
+      icon: Icons.stars,
+      category: 'dhikr',
+      hadithProof: '«كانت له عدل عشر رقاب وكُتبت له 100 حسنة ومُحيت عنه 100 سيئة» (متفق عليه)',
+    ),
+    ActionItem(
+      id: 'dh_5',
+      title: 'الصلاة على النبي ﷺ (100 مرة فأكثر)',
+      points: 80,
+      icon: Icons.favorite_border,
+      category: 'dhikr',
+      hadithProof: '«من صلى علي صلاة صلى الله عليه بها عشراً وحط عنه عشر خطيئات» (صحيح النسائي)',
+    ),
+    ActionItem(
+      id: 'dh_6',
+      title: 'سبحان الله والحمد لله ولا إله إلا الله والله أكبر (100 مرة)',
+      points: 90,
+      icon: Icons.all_inclusive,
+      category: 'dhikr',
+      hadithProof: '«أحب الكلام إلى الله أربع.. لا يضرك بأيهن بدأت» (صحيح مسلم)',
+    ),
+    ActionItem(
+      id: 'dh_7',
+      title: 'دعاء كفارة المجلس عقب أي لقاء',
+      points: 40,
+      icon: Icons.cleaning_services,
+      category: 'dhikr',
+      hadithProof: '«سبحانك اللهم وبحمدك.. غُفر له ما كان في مجلسه ذلك» (صحيح الترمذي)',
+    ),
 
-    // 3. أمهات القربات
-    ActionItem(id: 'mg1', title: 'الرباط والجهاد بالمال والنفس', points: 500, icon: Icons.security, category: 'major_good'),
-    ActionItem(id: 'mg2', title: 'ملازمة الوالدين عند الكبر والمرض', points: 200, icon: Icons.elderly, category: 'major_good'),
-    ActionItem(id: 'mg3', title: 'كفالة يتيم ورعايته', points: 150, icon: Icons.child_care, category: 'major_good'),
-    ActionItem(id: 'mg4', title: 'إصلاح ذات البين وإنهاء خصومة', points: 150, icon: Icons.handshake, category: 'major_good'),
-    ActionItem(id: 'mg5', title: 'تفريج كربة معسرة كبرى / صدقة جارية', points: 150, icon: Icons.all_inclusive, category: 'major_good'),
-    ActionItem(id: 'mg6', title: 'العفو والصفح عند المقدرة التامة', points: 120, icon: Icons.sentiment_very_satisfied, category: 'major_good'),
+    // ----------------- 3. الزلات والذنوب اليومية والواقعية -----------------
+    ActionItem(
+      id: 'sin_miss_prayer',
+      title: 'تضييع صلاة فريضة حتى خروج وقتها عمداً',
+      points: -300,
+      icon: Icons.cancel,
+      category: 'habits_sins',
+      remedy: 'قضاؤها فوراً مع ركعتي توبة وندم وعزم على عدم العود',
+    ),
+    ActionItem(
+      id: 'sin_delay_prayer',
+      title: 'تأخير الصلاة عن وقتها الفاضل تكاسلاً',
+      points: -60,
+      icon: Icons.alarm_off,
+      category: 'habits_sins',
+      remedy: 'الوضوء وصلاة ركعتين نافلة فوراً',
+    ),
+    ActionItem(
+      id: 'sin_porn',
+      title: 'مشاهدة المحرمات أو الأفلام الإباحية',
+      points: -200,
+      icon: Icons.no_adult_content,
+      category: 'habits_sins',
+      remedy: 'اغتسال فوراً + صلاة ركعتي توبة + صدقة تطفئ غضب الرب',
+    ),
+    ActionItem(
+      id: 'sin_gaze',
+      title: 'إطلاق البصر المتعمد في العورات والمحرمات',
+      points: -50,
+      icon: Icons.visibility,
+      category: 'habits_sins',
+      remedy: 'الاستغفار 70 مرة وقراءة وجه من القرآن',
+    ),
+    ActionItem(
+      id: 'sin_smoking',
+      title: 'تناول السجائر / الشيشة / التدخين',
+      points: -40,
+      icon: Icons.smoking_rooms,
+      category: 'habits_sins',
+      remedy: 'إخراج قيمة علبة السجائر صدقة للفقراء وإمساك النفس',
+    ),
+    ActionItem(
+      id: 'sin_lying',
+      title: 'الكذب أو خيانة الوعد وتلفيق الأعذار',
+      points: -80,
+      icon: Icons.gavel,
+      category: 'habits_sins',
+      remedy: 'قول الصدق والاعتراف لمن كذبت عليه وإصلاح الأثر',
+    ),
+    ActionItem(
+      id: 'sin_cheat_work',
+      title: 'الغش في العمل أو التهرب من الدوام وأخذ أجر باطل',
+      points: -120,
+      icon: Icons.work_history_outlined,
+      category: 'habits_sins',
+      remedy: 'تعويض ساعات العمل أو التصدق بما يقابلها من الراتب',
+    ),
+    ActionItem(
+      id: 'sin_gheeba',
+      title: 'الغيبة والحديث في أعراض الناس بالسوء',
+      points: -100,
+      icon: Icons.record_voice_over,
+      category: 'habits_sins',
+      remedy: 'الاستغفار للشخص بظهر الغيب ومدحه في نفس المجلس',
+    ),
+    ActionItem(
+      id: 'sin_anger',
+      title: 'السب والشتم والبذاءة وكسر خواطر الناس بغضب',
+      points: -70,
+      icon: Icons.mood_bad,
+      category: 'habits_sins',
+      remedy: 'الاعتذار المباشر وتطييب خاطر من أسأت إليه',
+    ),
+    ActionItem(
+      id: 'sin_time_waste',
+      title: 'هدر الساعات الطويلة في الألعاب واللهو البطال',
+      points: -35,
+      icon: Icons.hourglass_disabled,
+      category: 'habits_sins',
+      remedy: 'جلسة تدبر واستغفار لمدة ربع ساعة تعويضاً عن العمر',
+    ),
 
-    // 4. المحاسبة والزلات
-    ActionItem(id: 'sin1', title: 'تأخير صلاة عن وقتها عمداً', points: -20, icon: Icons.error_outline, category: 'sins', remedy: 'صلِّ الفريضة قضاءً الآن فوراً + استغفار 30 مرة'),
-    ActionItem(id: 'sin2', title: 'ترك صلاة فريضة حتى خروج وقتها', points: -40, icon: Icons.cancel_outlined, category: 'sins', remedy: 'قضاء فوراً + ركعتا توبة نصوح'),
-    ActionItem(id: 'sin3', title: 'غيبة وتتبع عورات المسلمين', points: -25, icon: Icons.record_voice_over_outlined, category: 'sins', remedy: 'ادعُ للمغتاب بظهر الغيب + تصدق بنية التكفير'),
-    ActionItem(id: 'sin4', title: 'نميمة ونقل كلام للإفساد', points: -30, icon: Icons.hearing_disabled, category: 'sins', remedy: 'إصلاح ما أفسدته بالاعتذار وتكذيب الإشاعة'),
-    ActionItem(id: 'sin5', title: 'كذب أو إخلاف عهد', points: -20, icon: Icons.gavel, category: 'sins', remedy: 'قول الصدق وإصلاح الأثر فوراً'),
-    ActionItem(id: 'sin6', title: 'إطلاق البصر في محرم', points: -15, icon: Icons.visibility_off, category: 'sins', remedy: 'وضوء وركعتا توبة و100 استغفار بالسبحة'),
-    ActionItem(id: 'sin7', title: 'غضب وإهانة وجرح إنسان', points: -18, icon: Icons.mood_bad, category: 'sins', remedy: 'اعتذار مباشر وجبر خاطر الشخص'),
-    ActionItem(id: 'sin8', title: 'إضاعة ساعات في لهو فارغ', points: -10, icon: Icons.hourglass_disabled, category: 'sins', remedy: 'قراءة 5 صفحات قرآن استدراكاً للوقت'),
+    // ----------------- 4. الكبائر والموبقات العظام -----------------
+    ActionItem(
+      id: 'maj_shirk',
+      title: 'الشرك، السحر، التنجيم، أو صرف العبادة لغير الله',
+      points: -1000,
+      icon: Icons.dangerous,
+      category: 'major',
+      remedy: 'تجديد التوحيد بنطق الشهادتين وخلع الباطل من أصله',
+    ),
+    ActionItem(
+      id: 'maj_zina',
+      title: 'الزنا وفواحش الفروج',
+      points: -800,
+      icon: Icons.block,
+      category: 'major',
+      remedy: 'توبة نصوح مفصلية، قطع كل وسيلة، وصيام متتابع وصدقة',
+    ),
+    ActionItem(
+      id: 'maj_theft_bribery',
+      title: 'السرقة، الرشوة، أكل الربا، أو أكل مال اليتيم',
+      points: -600,
+      icon: Icons.money_off,
+      category: 'major',
+      remedy: 'لا تُقبل التوبة إلا برد كل قرش لصاحبه أو ورثته فوراً',
+    ),
+    ActionItem(
+      id: 'maj_parents_abuse',
+      title: 'عقوق الوالدين الصارخ (الشتم، النهر، قطيعة تامة)',
+      points: -700,
+      icon: Icons.priority_high,
+      category: 'major',
+      remedy: 'تقبيل أقدامهم وطلب المسامحة الصريحة قبل فوات الأوان',
+    ),
+    ActionItem(
+      id: 'maj_false_testimony',
+      title: 'شهادة الزور أو اليمين الغموس المقتطعة لحق مسلم',
+      points: -500,
+      icon: Icons.warning_amber,
+      category: 'major',
+      remedy: 'التراجع العلني أمام القضاء أو الناس وتبرئة المظلوم',
+    ),
+    ActionItem(
+      id: 'maj_alcohol',
+      title: 'شرب المسكرات أو تعاطي المخدرات',
+      points: -400,
+      icon: Icons.local_bar,
+      category: 'major',
+      remedy: 'الإقلاع الفوري ودخول مصحة أو برنامج تعافٍ وتوبة نصوح',
+    ),
 
-    // 5. الكبائر والموبقات
-    ActionItem(id: 'ms1', title: 'الشرك بالله أو الرياء المطبق', points: -500, icon: Icons.dangerous, category: 'major_sins', remedy: 'تجديد الشهادتين وتوبة نصوح من القلب'),
-    ActionItem(id: 'ms2', title: 'أكل الحرام (رشوة، سرقة، ربا)', points: -200, icon: Icons.money_off, category: 'major_sins', remedy: 'إرجاع المال لأهله فوراً أو التصدق به إن تعذر'),
-    ActionItem(id: 'ms3', title: 'عقوق الوالدين الصارخ أو إيذاؤهما', points: -250, icon: Icons.priority_high, category: 'major_sins', remedy: 'طلب الرضا على الركب وتقبيل أيديهما ورأسهما'),
-    ActionItem(id: 'ms4', title: 'شهادة الزور واليمين الغموس', points: -200, icon: Icons.warning, category: 'major_sins', remedy: 'الرجوع عن الشهادة فوراً وتبرئة المظلوم'),
-    ActionItem(id: 'ms5', title: 'أكل مال اليتيم أو استغلال ضعفه', points: -250, icon: Icons.block, category: 'major_sins', remedy: 'رد كامل الحقوق لليتيم والتحلل منه'),
+    // ----------------- 5. المواسم والنفحات والقربات العظمى -----------------
+    ActionItem(
+      id: 'seas_ramadan',
+      title: 'صيام يوم من رمضان إيماناً واحتساباً',
+      points: 150,
+      icon: Icons.brightness_3,
+      category: 'seasons',
+      hadithProof: '«غفر له ما تقدم من ذنبه» (متفق عليه)',
+    ),
+    ActionItem(
+      id: 'seas_qadr',
+      title: 'قيام ليلة القدر إيماناً واحتساباً',
+      points: 1000,
+      icon: Icons.auto_awesome,
+      category: 'seasons',
+      hadithProof: '«ليلة القدر خير من ألف شهر»',
+    ),
+    ActionItem(
+      id: 'seas_arafah',
+      title: 'صيام يوم عرفة لغير الحاج',
+      points: 400,
+      icon: Icons.landscape,
+      category: 'seasons',
+      hadithProof: '«يكفر السنة الماضية والسنة القابلة» (صحيح مسلم)',
+    ),
+    ActionItem(
+      id: 'seas_ashura',
+      title: 'صيام يوم عاشوراء',
+      points: 200,
+      icon: Icons.shield_outlined,
+      category: 'seasons',
+      hadithProof: '«أحتسب على الله أن يكفر السنة التي قبله» (صحيح مسلم)',
+    ),
+    ActionItem(
+      id: 'seas_hajj',
+      title: 'الحج المبرور الخالص لوجه الله',
+      points: 1200,
+      icon: Icons.apartment,
+      category: 'seasons',
+      hadithProof: '«رجع كيوم ولدته أمه» (متفق عليه)',
+    ),
+    ActionItem(
+      id: 'seas_ribat',
+      title: 'الرباط وحراسة الثغور في سبيل الله',
+      points: 1000,
+      icon: Icons.security,
+      category: 'seasons',
+      hadithProof: '«رباط يوم وليلة خير من صيام شهر وقيامه» (صحيح مسلم)',
+    ),
+    ActionItem(
+      id: 'seas_orphan',
+      title: 'كفالة يتيم والقيام على احتياجاته',
+      points: 500,
+      icon: Icons.child_care,
+      category: 'seasons',
+      hadithProof: '«أنا وكافل اليتيم في الجنة هكذا» (صحيح البخاري)',
+    ),
   ];
 
   @override
@@ -122,7 +406,6 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     _loadLifetimeScores();
   }
 
-  // تحميل الرصيد المحفوظ من ذاكرة الهاتف
   Future<void> _loadLifetimeScores() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -131,7 +414,6 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     });
   }
 
-  // حفظ الرصيد في ذاكرة الهاتف
   Future<void> _saveLifetimeScores() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('total_good_points', _totalGoodPoints);
@@ -143,17 +425,11 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     setState(() {
       item.isCompleted = isChecked;
       if (item.points > 0) {
-        if (isChecked) {
-          _totalGoodPoints += item.points;
-        } else {
-          _totalGoodPoints -= item.points;
-        }
+        _totalGoodPoints += isChecked ? item.points : -item.points;
+        if (_totalGoodPoints < 0) _totalGoodPoints = 0;
       } else {
-        if (isChecked) {
-          _totalBadPoints += item.points.abs();
-        } else {
-          _totalBadPoints -= item.points.abs();
-        }
+        _totalBadPoints += isChecked ? item.points.abs() : -item.points.abs();
+        if (_totalBadPoints < 0) _totalBadPoints = 0;
       }
     });
 
@@ -167,7 +443,10 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
   void _showRemedyDialog(ActionItem item) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: Padding(
@@ -175,24 +454,33 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.shield_outlined, size: 50, color: Colors.orange),
+              Container(width: 45, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 14),
+              const Icon(Icons.shield_outlined, size: 55, color: Colors.orange),
               const SizedBox(height: 10),
-              const Text('﴿إِنَّ الْحَسَنَاتِ يُذْهِبْنَ السَّيِّئَاتِ﴾', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E))),
+              const Text(
+                '﴿إِنَّ الْحَسَنَاتِ يُذْهِبْنَ السَّيِّئَاتِ﴾',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E)),
+              ),
               const SizedBox(height: 8),
-              Text('سُجلت: (${item.title})', style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
+              Text('سُجلت الزلة: (${item.title})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.amber.shade200)),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
                 child: Row(
                   children: [
-                    const Icon(Icons.flash_on, color: Colors.amber),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.flash_on, color: Colors.amber, size: 28),
+                    const SizedBox(width: 10),
                     Expanded(child: Text(item.remedy!, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               ElevatedButton(
                 onPressed: () {
                   setState(() {
@@ -203,12 +491,31 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                   _saveLifetimeScores();
                   Navigator.pop(ctx);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B4D3E), foregroundColor: Colors.white, minimumSize: const Size.fromHeight(45)),
-                child: const Text('أتممتُ العمل المكفِّر ومحوتُ الأثر بفضل الله'),
-              )
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1B4D3E),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('أتممتُ الاستدراك والتوبة ومحوتُ الأثر بفضل الله'),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _resetDailyToggles() {
+    setState(() {
+      for (var a in _allActions) {
+        a.isCompleted = false;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('تم تصفير علامات اليومية لبدء يوم جديد، مع بقاء رصيدك التراكمي الشامل محفوظاً!'),
+        backgroundColor: Color(0xFF1B4D3E),
       ),
     );
   }
@@ -219,34 +526,45 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('ميزان الأعمال الشامل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19)),
+          title: const Text('ميزان الأعمال الحقيقي', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19)),
           backgroundColor: Colors.white,
           elevation: 0,
+          actions: [
+            IconButton(
+              tooltip: 'بدء يوم جديد (تصفير اليوميات)',
+              icon: const Icon(Icons.refresh, color: Color(0xFF1B4D3E)),
+              onPressed: _resetDailyToggles,
+            ),
+          ],
           bottom: TabBar(
             controller: _tabController,
             isScrollable: true,
             labelColor: const Color(0xFF1B4D3E),
             indicatorColor: const Color(0xFF1B4D3E),
             tabs: const [
-              Tab(text: 'اليومي والأسبوعي'),
-              Tab(text: 'المواسم والنفحات'),
-              Tab(text: 'أفضل القربات'),
-              Tab(text: 'المحاسبة والزلات'),
+              Tab(text: 'الفرائض واليوميات'),
+              Tab(text: 'كنز الأذكار والأدعية'),
+              Tab(text: 'الزلات والعادات'),
               Tab(text: 'الكبائر والموبقات'),
+              Tab(text: 'المواسم والقربات العظمى'),
             ],
           ),
         ),
         body: Column(
           children: [
-            // بطاقة الرصيد التراكمي الشامل (Total Score)
+            // لوحة الرصيد التراكمي التاريخي
             Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(18),
+              margin: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF1B4D3E), Color(0xFF2C7A5E)]),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1B4D3E), Color(0xFF2C7A5E)],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFF1B4D3E).withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6)),
+                  BoxShadow(color: const Color(0xFF1B4D3E).withOpacity(0.22), blurRadius: 10, offset: const Offset(0, 5)),
                 ],
               ),
               child: Column(
@@ -257,10 +575,12 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('رصيدك التراكمي الشامل', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          const Text('رصيدك الشامل منذ بدء التطبيق', style: TextStyle(color: Colors.white70, fontSize: 13)),
                           const SizedBox(height: 2),
                           Text(
-                            _lifetimeNetScore >= 0 ? 'ميزانك العام رابح ✨' : 'راجع حساباتك واستغفر ⚠️',
+                            _lifetimeNetScore >= 500
+                                ? 'كفة راجحة بفضل الله 🌟'
+                                : (_lifetimeNetScore >= 0 ? 'ميزان متماسك ⚖️' : 'ناقوس خطر: استدرك بالتوبة ⚠️'),
                             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -275,7 +595,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                       ),
                     ],
                   ),
-                  const Divider(color: Colors.white24, height: 24),
+                  const Divider(color: Colors.white24, height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -283,7 +603,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                         children: [
                           const Icon(Icons.arrow_upward, color: Color(0xFF68D391), size: 18),
                           const SizedBox(width: 4),
-                          Text('إجمالي الحسنات: +$_totalGoodPoints', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                          Text('إجمالي الحسنات: +$_totalGoodPoints', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       Container(width: 1, height: 16, color: Colors.white24),
@@ -291,7 +611,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                         children: [
                           const Icon(Icons.arrow_downward, color: Color(0xFFFC8181), size: 18),
                           const SizedBox(width: 4),
-                          Text('إجمالي الزلات: -$_totalBadPoints', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                          Text('إجمالي السيئات: -$_totalBadPoints', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ],
@@ -299,16 +619,16 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                 ],
               ),
             ),
-            // محتوى التبويبات
+            // القوائم المصنفة
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
                   _buildList('daily', Colors.green.shade50),
+                  _buildList('dhikr', Colors.teal.shade50),
+                  _buildList('habits_sins', Colors.orange.shade50),
+                  _buildList('major', Colors.red.shade50),
                   _buildList('seasons', Colors.amber.shade50),
-                  _buildList('major_good', Colors.teal.shade50),
-                  _buildList('sins', Colors.orange.shade50),
-                  _buildList('major_sins', Colors.red.shade50),
                 ],
               ),
             ),
@@ -318,7 +638,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildList(String category, Color bgColor) {
+  Widget _buildList(String category, Color completedBgColor) {
     final list = _allActions.where((a) => a.category == category).toList();
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -328,25 +648,52 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
         final isNegative = item.points < 0;
         return Card(
           elevation: 0,
-          color: item.isCompleted ? bgColor : Colors.white,
+          color: item.isCompleted ? completedBgColor : Colors.white,
           margin: const EdgeInsets.only(bottom: 8),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: item.isCompleted ? (isNegative ? Colors.red : const Color(0xFF1B4D3E)) : Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: item.isCompleted
+                  ? (isNegative ? Colors.red.shade300 : const Color(0xFF1B4D3E))
+                  : Colors.grey.shade200,
+            ),
           ),
           child: ListTile(
-            leading: Icon(item.icon, color: isNegative ? Colors.redAccent : const Color(0xFF1B4D3E)),
-            title: Text(item.title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, decoration: item.isCompleted && !isNegative ? TextDecoration.lineThrough : null)),
+            leading: CircleAvatar(
+              backgroundColor: isNegative ? Colors.red.shade50 : const Color(0xFFE8F5E9),
+              foregroundColor: isNegative ? Colors.redAccent : const Color(0xFF1B4D3E),
+              child: Icon(item.icon, size: 20),
+            ),
+            title: Text(
+              item.title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                decoration: item.isCompleted && !isNegative ? TextDecoration.lineThrough : null,
+              ),
+            ),
+            subtitle: item.hadithProof != null
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(item.hadithProof!, style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
+                  )
+                : null,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   '${item.points > 0 ? "+" : ""}${item.points}',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: isNegative ? Colors.red : const Color(0xFF1B4D3E), fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isNegative ? Colors.red : const Color(0xFF1B4D3E),
+                    fontSize: 14,
+                  ),
                 ),
+                const SizedBox(width: 6),
                 Checkbox(
                   value: item.isCompleted,
                   activeColor: isNegative ? Colors.red : const Color(0xFF1B4D3E),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   onChanged: (val) => _onToggleAction(item, val),
                 ),
               ],
