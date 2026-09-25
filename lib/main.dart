@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -28,13 +29,12 @@ class MeezanApp extends StatelessWidget {
   }
 }
 
-// نموذج العمل أو الذنب
 class ActionItem {
   final String id;
   final String title;
   final int points;
   final IconData icon;
-  final String category; // 'daily', 'habits_sins', 'seasons', 'major', 'dhikr'
+  final String category;
   final String? hadithProof;
   final String? remedy;
   bool isCompleted;
@@ -66,9 +66,8 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
 
   int get _lifetimeNetScore => _totalGoodPoints - _totalBadPoints;
 
-  // بنك الأعمال والعبادات والأدعية والسيئات
   final List<ActionItem> _allActions = [
-    // ----------------- 1. الفرائض واليوميات الأساسية -----------------
+    // 1. الفرائض واليوميات الأساسية
     ActionItem(
       id: 'd_fajr',
       title: 'صلاة الفجر في وقتها',
@@ -150,7 +149,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       hadithProof: '«اصرف بصرك» (صحيح مسلم)',
     ),
 
-    // ----------------- 2. كنز الأذكار والأدعية الثقيلة في الميزان -----------------
+    // 2. كنز الأذكار والأدعية الثقيلة في الميزان
     ActionItem(
       id: 'dh_1',
       title: 'سبحان الله وبحمده (100 مرة)',
@@ -197,7 +196,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       points: 90,
       icon: Icons.all_inclusive,
       category: 'dhikr',
-      hadithProof: '«أحب الكلام إلى الله أربع.. لا يضرك بأيهن بدأت» (صحيح مسلم)',
+      hadithProof: '«أحب الكلام إلى الله أربع..» (صحيح مسلم)',
     ),
     ActionItem(
       id: 'dh_7',
@@ -208,7 +207,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       hadithProof: '«سبحانك اللهم وبحمدك.. غُفر له ما كان في مجلسه ذلك» (صحيح الترمذي)',
     ),
 
-    // ----------------- 3. الزلات والذنوب اليومية والواقعية -----------------
+    // 3. الزلات والذنوب اليومية والواقعية
     ActionItem(
       id: 'sin_miss_prayer',
       title: 'تضييع صلاة فريضة حتى خروج وقتها عمداً',
@@ -290,7 +289,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       remedy: 'جلسة تدبر واستغفار لمدة ربع ساعة تعويضاً عن العمر',
     ),
 
-    // ----------------- 4. الكبائر والموبقات العظام -----------------
+    // 4. الكبائر والموبقات العظام
     ActionItem(
       id: 'maj_shirk',
       title: 'الشرك، السحر، التنجيم، أو صرف العبادة لغير الله',
@@ -340,7 +339,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       remedy: 'الإقلاع الفوري ودخول مصحة أو برنامج تعافٍ وتوبة نصوح',
     ),
 
-    // ----------------- 5. المواسم والنفحات والقربات العظمى -----------------
+    // 5. المواسم والنفحات والقربات العظمى
     ActionItem(
       id: 'seas_ramadan',
       title: 'صيام يوم من رمضان إيماناً واحتساباً',
@@ -403,15 +402,31 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    _loadLifetimeScores();
+    _checkDailyResetAndLoadScores(); // التحقق التلقائي من اليوم الجديد
   }
 
-  Future<void> _loadLifetimeScores() async {
+  // التصفير التلقائي اليومي مع بقاء الرصيد التراكمي
+  Future<void> _checkDailyResetAndLoadScores() async {
     final prefs = await SharedPreferences.getInstance();
+
     setState(() {
       _totalGoodPoints = prefs.getInt('total_good_points') ?? 0;
       _totalBadPoints = prefs.getInt('total_bad_points') ?? 0;
     });
+
+    final String todayDate = DateTime.now().toIso8601String().split('T').first;
+    final String? lastSavedDate = prefs.getString('last_active_date');
+
+    // إذا بدأ يوم جديد بعد منتصف الليل، تصفر الاختيارات اليومية فقط
+    if (lastSavedDate != null && lastSavedDate != todayDate) {
+      setState(() {
+        for (var a in _allActions) {
+          a.isCompleted = false;
+        }
+      });
+    }
+
+    await prefs.setString('last_active_date', todayDate);
   }
 
   Future<void> _saveLifetimeScores() async {
@@ -506,7 +521,121 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     );
   }
 
-  void _resetDailyToggles() {
+  void _showSupportDialog() {
+    const String myIban = "PS00PALS000000000000000000000";
+    const String palpayNumber = "059xxxxxxx";
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 16),
+              const Icon(Icons.volunteer_activism, size: 50, color: Color(0xFF1B4D3E)),
+              const SizedBox(height: 12),
+              const Text(
+                'دعم وتطوير ميزان الأعمال',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'التطبيق مجاني ومتاح لوجه الله تعالى. دعمكم يساهم في تطوير ميزات جديدة مستمرة.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4F9F6),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF1B4D3E).withOpacity(0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.account_balance, color: Color(0xFF1B4D3E), size: 20),
+                        SizedBox(width: 8),
+                        Text('بنك فلسطين (Bank of Palestine)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text('رقم الآيبان (IBAN):', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            myIban,
+                            style: TextStyle(fontFamily: 'monospace', fontSize: 12, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy, size: 18, color: Color(0xFF1B4D3E)),
+                          onPressed: () {
+                            Clipboard.setData(const ClipboardData(text: myIban));
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('تم نسخ رقم الـ IBAN بنجاح!')),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.phone_android, color: Colors.amber, size: 24),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('تحويل عبر تطبيق بنكي / PalPay:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text('رقم الهاتف: $palpayNumber', style: const TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إغلاق', style: TextStyle(color: Colors.grey)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _manualResetDaily() {
     setState(() {
       for (var a in _allActions) {
         a.isCompleted = false;
@@ -514,7 +643,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('تم تصفير علامات اليومية لبدء يوم جديد، مع بقاء رصيدك التراكمي الشامل محفوظاً!'),
+        content: Text('تم تصفير اليوميات لبدء يوم جديد، ورصيدك التاريخي العام محفوظ!'),
         backgroundColor: Color(0xFF1B4D3E),
       ),
     );
@@ -531,9 +660,14 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
           elevation: 0,
           actions: [
             IconButton(
-              tooltip: 'بدء يوم جديد (تصفير اليوميات)',
+              tooltip: 'دعم التطبيق (بنك فلسطين)',
+              icon: const Icon(Icons.volunteer_activism, color: Color(0xFF1B4D3E)),
+              onPressed: _showSupportDialog,
+            ),
+            IconButton(
+              tooltip: 'تصفير اليومية يدوياً',
               icon: const Icon(Icons.refresh, color: Color(0xFF1B4D3E)),
-              onPressed: _resetDailyToggles,
+              onPressed: _manualResetDaily,
             ),
           ],
           bottom: TabBar(
@@ -552,7 +686,6 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
         ),
         body: Column(
           children: [
-            // لوحة الرصيد التراكمي التاريخي
             Container(
               margin: const EdgeInsets.all(14),
               padding: const EdgeInsets.all(16),
@@ -619,7 +752,6 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                 ],
               ),
             ),
-            // القوائم المصنفة
             Expanded(
               child: TabBarView(
                 controller: _tabController,
