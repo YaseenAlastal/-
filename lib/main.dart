@@ -34,7 +34,7 @@ class ActionItem {
   final String title;
   final int points;
   final IconData icon;
-  final String category;
+  final String category; // 'daily', 'dhikr', 'habits_sins', 'major', 'seasons'
   final String? hadithProof;
   final String? remedy;
   bool isCompleted;
@@ -66,8 +66,9 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
 
   int get _lifetimeNetScore => _totalGoodPoints - _totalBadPoints;
 
+  // بنك الأعمال والعبادات والسيئات
   final List<ActionItem> _allActions = [
-    // 1. الفرائض واليوميات الأساسية
+    // 1. الفرائض واليوميات
     ActionItem(
       id: 'd_fajr',
       title: 'صلاة الفجر في وقتها',
@@ -134,7 +135,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     ),
     ActionItem(
       id: 'd_work_honesty',
-      title: 'إتقان العمل الوظيفي والصدق التام بالأمانة',
+      title: 'إتقان العمل والوظيفة والصدق بالأمانة',
       points: 35,
       icon: Icons.work_outline,
       category: 'daily',
@@ -149,7 +150,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       hadithProof: '«اصرف بصرك» (صحيح مسلم)',
     ),
 
-    // 2. كنز الأذكار والأدعية الثقيلة في الميزان
+    // 2. كنز الأذكار ومحو السيئات
     ActionItem(
       id: 'dh_1',
       title: 'سبحان الله وبحمده (100 مرة)',
@@ -207,7 +208,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       hadithProof: '«سبحانك اللهم وبحمدك.. غُفر له ما كان في مجلسه ذلك» (صحيح الترمذي)',
     ),
 
-    // 3. الزلات والذنوب اليومية والواقعية
+    // 3. الزلات والعادات اليومية
     ActionItem(
       id: 'sin_miss_prayer',
       title: 'تضييع صلاة فريضة حتى خروج وقتها عمداً',
@@ -246,7 +247,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       points: -40,
       icon: Icons.smoking_rooms,
       category: 'habits_sins',
-      remedy: 'إخراج قيمة علبة السجائر صدقة للفقراء وإمساك النفس',
+      remedy: 'إخراج قيمة العلبة صدقة للفقراء وإمساك النفس لوجه الله',
     ),
     ActionItem(
       id: 'sin_lying',
@@ -258,11 +259,11 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     ),
     ActionItem(
       id: 'sin_cheat_work',
-      title: 'الغش في العمل أو التهرب من الدوام وأخذ أجر باطل',
+      title: 'الغش في العمل أو التهرب وأخذ أجر باطل',
       points: -120,
       icon: Icons.work_history_outlined,
       category: 'habits_sins',
-      remedy: 'تعويض ساعات العمل أو التصدق بما يقابلها من الراتب',
+      remedy: 'تعويض ساعات العمل أو التصدق بما يقابلها من المال',
     ),
     ActionItem(
       id: 'sin_gheeba',
@@ -278,11 +279,11 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       points: -70,
       icon: Icons.mood_bad,
       category: 'habits_sins',
-      remedy: 'الاعتذار المباشر وتطييب خاطر من أسأت إليه',
+      remedy: 'الاعتذار المباشر وتطييب خاطر من أسأت إليه فوراً',
     ),
     ActionItem(
       id: 'sin_time_waste',
-      title: 'هدر الساعات الطويلة في الألعاب واللهو البطال',
+      title: 'هدر الساعات الطويلة في اللهو البطال',
       points: -35,
       icon: Icons.hourglass_disabled,
       category: 'habits_sins',
@@ -328,7 +329,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       points: -500,
       icon: Icons.warning_amber,
       category: 'major',
-      remedy: 'التراجع العلني أمام القضاء أو الناس وتبرئة المظلوم',
+      remedy: 'التراجع العلني أمام الناس وتبرئة المظلوم ورد الحق',
     ),
     ActionItem(
       id: 'maj_alcohol',
@@ -336,10 +337,10 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       points: -400,
       icon: Icons.local_bar,
       category: 'major',
-      remedy: 'الإقلاع الفوري ودخول مصحة أو برنامج تعافٍ وتوبة نصوح',
+      remedy: 'الإقلاع الفوري ودخول برنامج تعافٍ وتوبة نصوح',
     ),
 
-    // 5. المواسم والنفحات والقربات العظمى
+    // 5. المواسم والقربات العظمى
     ActionItem(
       id: 'seas_ramadan',
       title: 'صيام يوم من رمضان إيماناً واحتساباً',
@@ -401,11 +402,11 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
-    _checkDailyResetAndLoadScores(); // التحقق التلقائي من اليوم الجديد
+    // 6 تبويبات بدلاً من 5 لتضمين قسم (مشاهد القيامة والجنة والنار)
+    _tabController = TabController(length: 6, vsync: this);
+    _checkDailyResetAndLoadScores();
   }
 
-  // التصفير التلقائي اليومي مع بقاء الرصيد التراكمي
   Future<void> _checkDailyResetAndLoadScores() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -417,7 +418,6 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     final String todayDate = DateTime.now().toIso8601String().split('T').first;
     final String? lastSavedDate = prefs.getString('last_active_date');
 
-    // إذا بدأ يوم جديد بعد منتصف الليل، تصفر الاختيارات اليومية فقط
     if (lastSavedDate != null && lastSavedDate != todayDate) {
       setState(() {
         for (var a in _allActions) {
@@ -521,114 +521,126 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     );
   }
 
-  void _showSupportDialog() {
+  // نافذة معلومات المطور والمنشئ وتفاصيل الدعم
+  void _showCreatorAndSupportDialog() {
+    const String creatorAr = "د. ياسين عبد الكريم محمد الأسطل";
+    const String creatorEn = "Dr. Yaseen Abd Elkareem Alastal";
+    const String origin = "فلسطين 🇵🇸";
+    const String whatsappNumber = "00972595350042";
     const String myIban = "PS00PALS000000000000000000000";
-    const String palpayNumber = "059xxxxxxx";
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
-              const SizedBox(height: 16),
-              const Icon(Icons.volunteer_activism, size: 50, color: Color(0xFF1B4D3E)),
-              const SizedBox(height: 12),
-              const Text(
-                'دعم وتطوير ميزان الأعمال',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E)),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'التطبيق مجاني ومتاح لوجه الله تعالى. دعمكم يساهم في تطوير ميزات جديدة مستمرة.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 13, height: 1.4),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F9F6),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF1B4D3E).withOpacity(0.2)),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(width: 45, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
+                const SizedBox(height: 16),
+                const CircleAvatar(
+                  radius: 36,
+                  backgroundColor: Color(0xFF1B4D3E),
+                  child: Icon(Icons.person, size: 42, color: Colors.white),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.account_balance, color: Color(0xFF1B4D3E), size: 20),
-                        SizedBox(width: 8),
-                        Text('بنك فلسطين (Bank of Palestine)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text('رقم الآيبان (IBAN):', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            myIban,
-                            style: TextStyle(fontFamily: 'monospace', fontSize: 12, fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                const SizedBox(height: 12),
+                const Text(
+                  creatorAr,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E)),
+                ),
+                Text(
+                  creatorEn,
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  origin,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+
+                // صندوق الواتساب المباشر
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.chat, color: Colors.green, size: 28),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('التواصل عبر واتساب:', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                            Text(whatsappNumber, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.copy, size: 18, color: Color(0xFF1B4D3E)),
-                          onPressed: () {
-                            Clipboard.setData(const ClipboardData(text: myIban));
-                            Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('تم نسخ رقم الـ IBAN بنجاح!')),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.copy, color: Colors.green),
+                        tooltip: 'نسخ الرقم',
+                        onPressed: () {
+                          Clipboard.setData(const ClipboardData(text: whatsappNumber));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('تم نسخ رقم الواتساب بنجاح!')),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.amber.shade200),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.phone_android, color: Colors.amber, size: 24),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 12),
+
+                // صندوق الدعم عبر بنك فلسطين
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F9F6),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFF1B4D3E).withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
                         children: [
-                          const Text('تحويل عبر تطبيق بنكي / PalPay:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          Text('رقم الهاتف: $palpayNumber', style: const TextStyle(fontSize: 12)),
+                          Icon(Icons.account_balance, color: Color(0xFF1B4D3E), size: 20),
+                          SizedBox(width: 8),
+                          Text('دعم التطبيق - بنك فلسطين', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text('رقم الآيبان (IBAN): $myIban', style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('إغلاق', style: TextStyle(color: Colors.grey)),
-              ),
-            ],
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1B4D3E),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(45),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('إغلاق'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -643,7 +655,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('تم تصفير اليوميات لبدء يوم جديد، ورصيدك التاريخي العام محفوظ!'),
+        content: Text('تم تصفير اليوميات لبدء يوم جديد، ورصيدك التاريخي الشامل محفوظ بفضل الله!'),
         backgroundColor: Color(0xFF1B4D3E),
       ),
     );
@@ -660,9 +672,9 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
           elevation: 0,
           actions: [
             IconButton(
-              tooltip: 'دعم التطبيق (بنك فلسطين)',
-              icon: const Icon(Icons.volunteer_activism, color: Color(0xFF1B4D3E)),
-              onPressed: _showSupportDialog,
+              tooltip: 'المنشئ والدعم (د. ياسين الأسطل)',
+              icon: const Icon(Icons.info_outline, color: Color(0xFF1B4D3E)),
+              onPressed: _showCreatorAndSupportDialog,
             ),
             IconButton(
               tooltip: 'تصفير اليومية يدوياً',
@@ -677,24 +689,22 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
             indicatorColor: const Color(0xFF1B4D3E),
             tabs: const [
               Tab(text: 'الفرائض واليوميات'),
-              Tab(text: 'كنز الأذكار والأدعية'),
+              Tab(text: 'كنز الأذكار ومحو السيئات'),
               Tab(text: 'الزلات والعادات'),
               Tab(text: 'الكبائر والموبقات'),
               Tab(text: 'المواسم والقربات العظمى'),
+              Tab(text: 'مشاهد القيامة والجنة والنار'),
             ],
           ),
         ),
         body: Column(
           children: [
+            // بطاقة الرصيد التراكمي الشامل
             Container(
               margin: const EdgeInsets.all(14),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1B4D3E), Color(0xFF2C7A5E)],
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                ),
+                gradient: const continentalGradient(),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(color: const Color(0xFF1B4D3E).withOpacity(0.22), blurRadius: 10, offset: const Offset(0, 5)),
@@ -752,6 +762,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                 ],
               ),
             ),
+            // محتوى التبويبات
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -761,6 +772,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                   _buildList('habits_sins', Colors.orange.shade50),
                   _buildList('major', Colors.red.shade50),
                   _buildList('seasons', Colors.amber.shade50),
+                  _buildEschatologyTab(), // تبويب الجنة والنار ويوم الحساب
                 ],
               ),
             ),
@@ -835,4 +847,114 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       },
     );
   }
+
+  // تبويب مشاهد يوم الحساب، وصف الجنة، ووصف النار
+  Widget _buildEschatologyTab() {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      children: [
+        _buildInfoSection(
+          title: '⚖️ هول يوم الحساب والميزان والصراط',
+          subtitle: '﴿وَوُضِعَ الْكِتَابُ فَتَرَى الْمُجْرِمِينَ مُشْفِقِينَ مِمَّا فِيهِ﴾',
+          color: Colors.blueGrey,
+          items: const [
+            'الوقوف والشمس تدنو: يقف العباد في أرض المحشر خمسين ألف سنة، وتدنو الشمس من الرؤوس بمقدار ميل حتى يلجم العرق الناس إلجاماً بقدر أعمالهم، إلا السبعة الذين يظلهم الله في ظله.',
+            'نصب الميزان الحقيقي: ميزان حقيقي له كفتان ولسان، توزن فيه الأعمال والصحائف والأشخاص، ويثقل بلا إله إلا الله وحسن الخلق والذكر.',
+            'تطاير الصحف: فآخذٌ كتابه بيمينه إلى فوز وسرور، وآخذٌ كتابه بشماله أو من وراء ظهره إلى ثبور وسعير.',
+            'الصراط ودحض المزلة: جسر مضروب على متن جهنم، أدق من الشعرة وأحد من السيف، عليه كلاليب وحسك تخطف الناس؛ فمنهم من يمر كالبرق، ومنهم كالريح، ومنهم من يُخدش ويسقط في النار.',
+          ],
+        ),
+        const SizedBox(height: 14),
+        _buildInfoSection(
+          title: '🌿 وصف الجنة ونعيمها المقيم',
+          subtitle: '﴿فَلَا تَعْلَمُ نَفْسٌ مَّا أُخْفِيَ لَهُم مِّن قُرَّةِ أَعْيُنٍ﴾',
+          color: const Color(0xFF1B4D3E),
+          items: const [
+            'أبواب الجنة وبناؤها: للجنة ثمانية أبواب (منها الريان، والصلاة، والصدقة)، لبنة من ذهب ولبنة من فضة، وملاطها المسك الأذفر، وحصباؤها اللؤلؤ والياقوت.',
+            'أنهارها وثمارها: أنهار من ماء غير آسن، وأنهار من لبن، وأنهار من خمر لذة للشاربين، وأنهار من عسل مصفى؛ وثمارها دانية مذللة كقلال هجر.',
+            'نعيم القصور والحور: خيمة من لؤلؤة مجوفة طولها ستون ميلاً، وفرش مرفوعة، وحور عين كأنهن الياقوت والمرجان، لا يبصقون ولا يمتخطون ولا يهرمون أبداً.',
+            'النعيم الأعظم: رؤية وجه الله الكريم وزيادة الرضوان، حيث يكشف الحجاب فما أُعطوا شيئاً أحب إليهم من النظر إلى ربهم.',
+          ],
+        ),
+        const SizedBox(height: 14),
+        _buildInfoSection(
+          title: '🔥 وصف النار ودركاتها وأهوالها',
+          subtitle: '﴿كَلَّا إِنَّهَا لَظَىٰ • نَزَّاعَةً لِّلشَّوَىٰ﴾',
+          color: Colors.red.shade900,
+          items: const [
+            'شدة حرارتها ووقودها: نار الدنيا جزء من سبعين جزءاً من نار جهنم، وقودها الناس والحجارة، وسوادها مظلم لا ضوء فيه.',
+            'أبوابها ودركاتها: لها سبعة أبواب مقفلة مطبقة، لكل باب جزء مقسوم، وفي أسفلها الدرك الأسفل للمنافقين.',
+            'طعام وشراب أهلها: طعامهم من ضريع وشجرة الزقوم التي تغلي في البطون كغلي الحميم، وشرابهم ماء صديد وغساق يقطع أمعاءهم بمجرد قربه.',
+            'اللباس والقيود: سرابيلهم من قطران، وتغشى وجوههم النار، مقرنين في الأصفاد بسلاسل ذرعها سبعون ذراعاً، كلما نضجت جلودهم بُدِّلوا جلوداً غيرها ليذوقوا العذاب.',
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoSection({
+    required String title,
+    required String subtitle,
+    required Color color,
+    required List<String> items,
+  }) {
+    return Card(
+      elevation: 0,
+      color: color.withOpacity(0.06),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: color.withOpacity(0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color.withOpacity(0.85)),
+            ),
+            const SizedBox(height: 12),
+            ...items.map(
+              (text) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('• ', style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Text(
+                        text,
+                        style: const TextStyle(fontSize: 13, height: 1.45, color: Colors.black87),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class continentalGradient extends LinearGradient {
+  const continentalGradient()
+      : super(
+          colors: const [Color(0xFF1B4D3E), Color(0xFF2C7A5E)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        );
 }
