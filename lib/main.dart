@@ -402,7 +402,6 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    // 6 تبويبات بدلاً من 5 لتضمين قسم (مشاهد القيامة والجنة والنار)
     _tabController = TabController(length: 6, vsync: this);
     _checkDailyResetAndLoadScores();
   }
@@ -521,7 +520,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     );
   }
 
-  // نافذة معلومات المطور والمنشئ وتفاصيل الدعم
+  // نافذة معلومات المطور والمنشئ + إخلاء المسؤولية التربوي الشرعي
   void _showCreatorAndSupportDialog() {
     const String creatorAr = "د. ياسين عبد الكريم محمد الأسطل";
     const String creatorEn = "Dr. Yaseen Abd Elkareem Alastal";
@@ -539,7 +538,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
       builder: (ctx) => Directionality(
         textDirection: TextDirection.rtl,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -547,11 +546,11 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                 Container(width: 45, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10))),
                 const SizedBox(height: 16),
                 const CircleAvatar(
-                  radius: 36,
+                  radius: 34,
                   backgroundColor: Color(0xFF1B4D3E),
-                  child: Icon(Icons.person, size: 42, color: Colors.white),
+                  child: Icon(Icons.person, size: 40, color: Colors.white),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 const Text(
                   creatorAr,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E)),
@@ -560,14 +559,44 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                   creatorEn,
                   style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 const Text(
                   origin,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 8),
+                const SizedBox(height: 14),
+
+                // بطاقة إخلاء المسؤولية التربوي اللطيف
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.shade50,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.blueGrey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.menu_book_outlined, color: Colors.blueGrey.shade800, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'تنبيه وإخلاء مسؤولية تربوي',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blueGrey.shade900),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'هذا التطبيق وسيلة تقريبية للتدريب، وشحذ الهمة، والمحاسبة الذاتية، ومجاهدة النفس على الاستقامة.\n\n'
+                        'أما موازين الغيب، وحقيقة الأجر والقبول، ومضاعفة الحسنات أو العفو عن السيئات، فمرجعها وعلمها عند الله وحده سبحانه وتعالى، وهو القائل: ﴿وَنَضَعُ الْمَوَازِينَ الْقِسْطَ لِيَوْمِ الْقِيَامَةِ فَلَا تُظْلَمُ نَفْسٌ شَيْئًا﴾.',
+                        style: TextStyle(fontSize: 12, height: 1.5, color: Colors.blueGrey.shade900),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
 
                 // صندوق الواتساب المباشر
                 Container(
@@ -586,12 +615,12 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('التواصل عبر واتساب:', style: TextStyle(fontSize: 11, color: Colors.black54)),
-                            Text(whatsappNumber, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                            Text(whatsappNumber, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.copy, color: Colors.green),
+                        icon: const Icon(Icons.copy, color: Colors.green, size: 20),
                         tooltip: 'نسخ الرقم',
                         onPressed: () {
                           Clipboard.setData(const ClipboardData(text: whatsappNumber));
@@ -603,7 +632,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 // صندوق الدعم عبر بنك فلسطين
                 Container(
@@ -672,7 +701,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
           elevation: 0,
           actions: [
             IconButton(
-              tooltip: 'المنشئ والدعم (د. ياسين الأسطل)',
+              tooltip: 'المنشئ وإخلاء المسؤولية والدعم',
               icon: const Icon(Icons.info_outline, color: Color(0xFF1B4D3E)),
               onPressed: _showCreatorAndSupportDialog,
             ),
@@ -772,7 +801,7 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
                   _buildList('habits_sins', Colors.orange.shade50),
                   _buildList('major', Colors.red.shade50),
                   _buildList('seasons', Colors.amber.shade50),
-                  _buildEschatologyTab(), // تبويب الجنة والنار ويوم الحساب
+                  _buildEschatologyTab(),
                 ],
               ),
             ),
@@ -848,7 +877,6 @@ class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProvider
     );
   }
 
-  // تبويب مشاهد يوم الحساب، وصف الجنة، ووصف النار
   Widget _buildEschatologyTab() {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
