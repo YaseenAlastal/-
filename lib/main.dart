@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MeezanApp());
 }
 
@@ -17,12 +19,11 @@ class MeezanApp extends StatelessWidget {
         fontFamily: 'sans-serif',
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1B4D3E),
-          brightness: Brightness.light,
           primary: const Color(0xFF1B4D3E),
           surface: const Color(0xFFF9FBF9),
         ),
       ),
-      home: const HomeScreen(),
+      home: const MainTabScreen(),
     );
   }
 }
@@ -33,6 +34,7 @@ class ActionItem {
   final int points;
   final IconData icon;
   final String category;
+  final String? remedy;
   bool isCompleted;
 
   ActionItem({
@@ -41,224 +43,173 @@ class ActionItem {
     required this.points,
     required this.icon,
     required this.category,
+    this.remedy,
     this.isCompleted = false,
   });
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class MainTabScreen extends StatefulWidget {
+  const MainTabScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<MainTabScreen> createState() => _MainTabScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  final List<ActionItem> _goodDeeds = [
-    ActionItem(id: '1', title: 'صلاة الفجر في وقتها', points: 15, icon: Icons.alarm, category: 'فرائض'),
-    ActionItem(id: '2', title: 'الصلوات المفروضة (جماعة/في وقتها)', points: 40, icon: Icons.mosque, category: 'فرائض'),
-    ActionItem(id: '3', title: 'ورد القرآن الكريم (صفحتان فأكثر)', points: 15, icon: Icons.menu_book, category: 'قرآن وذكر'),
-    ActionItem(id: '4', title: 'أذكار الصباح والمساء', points: 12, icon: Icons.wb_sunny_outlined, category: 'قرآن وذكر'),
-    ActionItem(id: '5', title: 'بر الوالدين وخدمتهما', points: 25, icon: Icons.favorite, category: 'معاملات'),
-    ActionItem(id: '6', title: 'صدقة أو تفريج كربة', points: 20, icon: Icons.volunteer_activism, category: 'معاملات'),
-    ActionItem(id: '7', title: 'السنن الرواتب والشفع والوتر', points: 15, icon: Icons.spa, category: 'سنن'),
+class _MainTabScreenState extends State<MainTabScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  // الرصيد التراكمي المحفوظ على مدار الزمن
+  int _totalGoodPoints = 0;
+  int _totalBadPoints = 0;
+
+  int get _lifetimeNetScore => _totalGoodPoints - _totalBadPoints;
+
+  final List<ActionItem> _allActions = [
+    // 1. اليومي والأسبوعي
+    ActionItem(id: 'd1', title: 'صلاة الفجر في وقتها', points: 15, icon: Icons.alarm, category: 'daily'),
+    ActionItem(id: 'd2', title: 'الصلوات المفروضة جماعة وفي وقتها', points: 40, icon: Icons.mosque, category: 'daily'),
+    ActionItem(id: 'd3', title: 'السنن الرواتب والشفع والوتر', points: 15, icon: Icons.spa, category: 'daily'),
+    ActionItem(id: 'd4', title: 'صلاة الضحى', points: 8, icon: Icons.wb_sunny_outlined, category: 'daily'),
+    ActionItem(id: 'd5', title: 'ورد القرآن اليومي (حزب أو جزء)', points: 15, icon: Icons.menu_book, category: 'daily'),
+    ActionItem(id: 'd6', title: 'أذكار الصباح والمساء', points: 12, icon: Icons.wb_twilight, category: 'daily'),
+    ActionItem(id: 'd7', title: 'الاستغفار والصلاة على النبي (100 مرة)', points: 10, icon: Icons.repeat, category: 'daily'),
+    ActionItem(id: 'd8', title: 'بر الوالدين والإحسان لهما', points: 25, icon: Icons.favorite, category: 'daily'),
+    ActionItem(id: 'd9', title: 'صدقة مالية أو إطعام محتاج', points: 15, icon: Icons.volunteer_activism, category: 'daily'),
+    ActionItem(id: 'd10', title: 'إتقان العمل والوظيفة بأمانة', points: 15, icon: Icons.work_outline, category: 'daily'),
+    ActionItem(id: 'd11', title: 'كظم الغيظ وحفظ اللسان وغض البصر', points: 15, icon: Icons.visibility_off_outlined, category: 'daily'),
+    ActionItem(id: 'd12', title: 'التبكير لصلاة الجمعة وسورة الكهف', points: 30, icon: Icons.auto_awesome, category: 'daily'),
+
+    // 2. المواسم والنفحات
+    ActionItem(id: 's1', title: 'صيام يوم من رمضان', points: 60, icon: Icons.nights_stay, category: 'seasons'),
+    ActionItem(id: 's2', title: 'إحياء ليلة القدر / العشر الأواخر', points: 250, icon: Icons.star_border_purple500, category: 'seasons'),
+    ActionItem(id: 's3', title: 'صيام يوم عرفة', points: 120, icon: Icons.cloud_done_outlined, category: 'seasons'),
+    ActionItem(id: 's4', title: 'صيام يوم عاشوراء', points: 80, icon: Icons.shield, category: 'seasons'),
+    ActionItem(id: 's5', title: 'أداء فريضة الحج (حج مبرور)', points: 400, icon: Icons.apartment, category: 'seasons'),
+    ActionItem(id: 's6', title: 'أداء مناسك العمرة', points: 120, icon: Icons.temple_buddhist, category: 'seasons'),
+    ActionItem(id: 's7', title: 'ذبح الأضحية وتوزيعها في العيد', points: 100, icon: Icons.card_giftcard, category: 'seasons'),
+    ActionItem(id: 's8', title: 'إخراج زكاة الفطر', points: 30, icon: Icons.redeem, category: 'seasons'),
+
+    // 3. أمهات القربات
+    ActionItem(id: 'mg1', title: 'الرباط والجهاد بالمال والنفس', points: 500, icon: Icons.security, category: 'major_good'),
+    ActionItem(id: 'mg2', title: 'ملازمة الوالدين عند الكبر والمرض', points: 200, icon: Icons.elderly, category: 'major_good'),
+    ActionItem(id: 'mg3', title: 'كفالة يتيم ورعايته', points: 150, icon: Icons.child_care, category: 'major_good'),
+    ActionItem(id: 'mg4', title: 'إصلاح ذات البين وإنهاء خصومة', points: 150, icon: Icons.handshake, category: 'major_good'),
+    ActionItem(id: 'mg5', title: 'تفريج كربة معسرة كبرى / صدقة جارية', points: 150, icon: Icons.all_inclusive, category: 'major_good'),
+    ActionItem(id: 'mg6', title: 'العفو والصفح عند المقدرة التامة', points: 120, icon: Icons.sentiment_very_satisfied, category: 'major_good'),
+
+    // 4. المحاسبة والزلات
+    ActionItem(id: 'sin1', title: 'تأخير صلاة عن وقتها عمداً', points: -20, icon: Icons.error_outline, category: 'sins', remedy: 'صلِّ الفريضة قضاءً الآن فوراً + استغفار 30 مرة'),
+    ActionItem(id: 'sin2', title: 'ترك صلاة فريضة حتى خروج وقتها', points: -40, icon: Icons.cancel_outlined, category: 'sins', remedy: 'قضاء فوراً + ركعتا توبة نصوح'),
+    ActionItem(id: 'sin3', title: 'غيبة وتتبع عورات المسلمين', points: -25, icon: Icons.record_voice_over_outlined, category: 'sins', remedy: 'ادعُ للمغتاب بظهر الغيب + تصدق بنية التكفير'),
+    ActionItem(id: 'sin4', title: 'نميمة ونقل كلام للإفساد', points: -30, icon: Icons.hearing_disabled, category: 'sins', remedy: 'إصلاح ما أفسدته بالاعتذار وتكذيب الإشاعة'),
+    ActionItem(id: 'sin5', title: 'كذب أو إخلاف عهد', points: -20, icon: Icons.gavel, category: 'sins', remedy: 'قول الصدق وإصلاح الأثر فوراً'),
+    ActionItem(id: 'sin6', title: 'إطلاق البصر في محرم', points: -15, icon: Icons.visibility_off, category: 'sins', remedy: 'وضوء وركعتا توبة و100 استغفار بالسبحة'),
+    ActionItem(id: 'sin7', title: 'غضب وإهانة وجرح إنسان', points: -18, icon: Icons.mood_bad, category: 'sins', remedy: 'اعتذار مباشر وجبر خاطر الشخص'),
+    ActionItem(id: 'sin8', title: 'إضاعة ساعات في لهو فارغ', points: -10, icon: Icons.hourglass_disabled, category: 'sins', remedy: 'قراءة 5 صفحات قرآن استدراكاً للوقت'),
+
+    // 5. الكبائر والموبقات
+    ActionItem(id: 'ms1', title: 'الشرك بالله أو الرياء المطبق', points: -500, icon: Icons.dangerous, category: 'major_sins', remedy: 'تجديد الشهادتين وتوبة نصوح من القلب'),
+    ActionItem(id: 'ms2', title: 'أكل الحرام (رشوة، سرقة، ربا)', points: -200, icon: Icons.money_off, category: 'major_sins', remedy: 'إرجاع المال لأهله فوراً أو التصدق به إن تعذر'),
+    ActionItem(id: 'ms3', title: 'عقوق الوالدين الصارخ أو إيذاؤهما', points: -250, icon: Icons.priority_high, category: 'major_sins', remedy: 'طلب الرضا على الركب وتقبيل أيديهما ورأسهما'),
+    ActionItem(id: 'ms4', title: 'شهادة الزور واليمين الغموس', points: -200, icon: Icons.warning, category: 'major_sins', remedy: 'الرجوع عن الشهادة فوراً وتبرئة المظلوم'),
+    ActionItem(id: 'ms5', title: 'أكل مال اليتيم أو استغلال ضعفه', points: -250, icon: Icons.block, category: 'major_sins', remedy: 'رد كامل الحقوق لليتيم والتحلل منه'),
   ];
 
-  final List<Map<String, dynamic>> _mistakes = [
-    {
-      'title': 'تأخير صلاة عن وقتها',
-      'points': -20,
-      'remedy': 'صلِّ الفريضة قضاءً الآن فوراً + استغفر 30 مرة',
-    },
-    {
-      'title': 'غيبة أو حديث في عرض مسلم',
-      'points': -25,
-      'remedy': 'ادعُ للمغتاب بظهر الغيب + تصدق بنية التكفير',
-    },
-    {
-      'title': 'إطلاق البصر في محرم',
-      'points': -15,
-      'remedy': 'توضأ وصلِّ ركعتي توبة واستغفر 70 مرة بالسبحة',
-    },
-    {
-      'title': 'غضب جارح أو خصومة',
-      'points': -15,
-      'remedy': 'أرسل رسالة اعتذار أو تودد للشخص الآن فوراً',
-    },
-    {
-      'title': 'إضاعة ساعات في لهو فارغ',
-      'points': -10,
-      'remedy': 'اقرأ 5 صفحات قرآن تعويضاً عن الوقت الضائع',
-    },
-  ];
-
-  int _mistakesPenalty = 0;
-  final int _streakDays = 5;
-
-  int get _goodPoints {
-    return _goodDeeds
-        .where((item) => item.isCompleted)
-        .fold(0, (sum, item) => sum + item.points);
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    _loadLifetimeScores();
   }
 
-  int get _netScore => _goodPoints - _mistakesPenalty;
-
-  void _recordMistake(String title, int points, String remedy) {
+  // تحميل الرصيد المحفوظ من ذاكرة الهاتف
+  Future<void> _loadLifetimeScores() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _mistakesPenalty += points.abs();
+      _totalGoodPoints = prefs.getInt('total_good_points') ?? 0;
+      _totalBadPoints = prefs.getInt('total_bad_points') ?? 0;
+    });
+  }
+
+  // حفظ الرصيد في ذاكرة الهاتف
+  Future<void> _saveLifetimeScores() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('total_good_points', _totalGoodPoints);
+    await prefs.setInt('total_bad_points', _totalBadPoints);
+  }
+
+  void _onToggleAction(ActionItem item, bool? val) {
+    final bool isChecked = val ?? false;
+    setState(() {
+      item.isCompleted = isChecked;
+      if (item.points > 0) {
+        if (isChecked) {
+          _totalGoodPoints += item.points;
+        } else {
+          _totalGoodPoints -= item.points;
+        }
+      } else {
+        if (isChecked) {
+          _totalBadPoints += item.points.abs();
+        } else {
+          _totalBadPoints -= item.points.abs();
+        }
+      }
     });
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (ctx) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Icon(Icons.shield_outlined, size: 55, color: Colors.orange),
-                const SizedBox(height: 12),
-                const Text(
-                  '﴿إِنَّ الْحَسَنَاتِ يُذْهِبْنَ السَّيِّئَاتِ﴾',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1B4D3E),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'سُجلت الزلة: ($title). لا تيأس، باب الاستدراك والمحو مفتوح فوراً!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.amber.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.flash_on, color: Colors.amber, size: 28),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          remedy,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _mistakesPenalty -= points.abs();
-                      if (_mistakesPenalty < 0) _mistakesPenalty = 0;
-                    });
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('أحسنت! تم محو الزلة وعودة كفة ميزانك بفضل الله.'),
-                        backgroundColor: Color(0xFF1B4D3E),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('أتممتُ العمل المكفِّر ومحوتُ الزلة'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1B4D3E),
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    _saveLifetimeScores();
+
+    if (item.points < 0 && item.isCompleted && item.remedy != null) {
+      _showRemedyDialog(item);
+    }
   }
 
-  void _openMistakesSheet() {
+  void _showRemedyDialog(ActionItem item) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (ctx) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(
-                  child: Text(
-                    'محاسبة النفس ومكافحة الزلل',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.shield_outlined, size: 50, color: Colors.orange),
+              const SizedBox(height: 10),
+              const Text('﴿إِنَّ الْحَسَنَاتِ يُذْهِبْنَ السَّيِّئَاتِ﴾', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E))),
+              const SizedBox(height: 8),
+              Text('سُجلت: (${item.title})', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.amber.shade200)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.flash_on, color: Colors.amber),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(item.remedy!, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Center(
-                  child: Text(
-                    'الاعتراف بالذنب أول خطوات المحو والاستقامة',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ..._mistakes.map((m) => Card(
-                      elevation: 0,
-                      color: Colors.red.shade50,
-                      margin: const EdgeInsets.only(bottom: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.red.shade100),
-                      ),
-                      child: ListTile(
-                        title: Text(m['title'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                        trailing: Text('${m['points']}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _recordMistake(m['title'], m['points'], m['remedy']);
-                        },
-                      ),
-                    )),
-                const SizedBox(height: 10),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    item.isCompleted = false;
+                    _totalBadPoints -= item.points.abs();
+                    if (_totalBadPoints < 0) _totalBadPoints = 0;
+                  });
+                  _saveLifetimeScores();
+                  Navigator.pop(ctx);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B4D3E), foregroundColor: Colors.white, minimumSize: const Size.fromHeight(45)),
+                child: const Text('أتممتُ العمل المكفِّر ومحوتُ الأثر بفضل الله'),
+              )
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -268,186 +219,141 @@ class _HomeScreenState extends State<HomeScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('ميزان الأعمال', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          title: const Text('ميزان الأعمال الشامل', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19)),
           backgroundColor: Colors.white,
           elevation: 0,
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(left: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade100,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.local_fire_department, color: Colors.deepOrange, size: 20),
-                  const SizedBox(width: 4),
-                  Text('$_streakDays أيام استمرار', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.deepOrange)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBalanceCard(),
-              const SizedBox(height: 16),
-              _buildSeasonBanner(),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('طاعاتك اليومية المقترحة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text('${_goodDeeds.where((d) => d.isCompleted).length} من ${_goodDeeds.length}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ..._goodDeeds.map((deed) => _buildDeedTile(deed)),
-              const SizedBox(height: 25),
-              OutlinedButton.icon(
-                onPressed: _openMistakesSheet,
-                icon: const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
-                label: const Text('سجل زلة أو تقصيراً لمسحه وتداركه فوراً', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-              ),
-              const SizedBox(height: 20),
+          bottom: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            labelColor: const Color(0xFF1B4D3E),
+            indicatorColor: const Color(0xFF1B4D3E),
+            tabs: const [
+              Tab(text: 'اليومي والأسبوعي'),
+              Tab(text: 'المواسم والنفحات'),
+              Tab(text: 'أفضل القربات'),
+              Tab(text: 'المحاسبة والزلات'),
+              Tab(text: 'الكبائر والموبقات'),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildBalanceCard() {
-    double progress = (_netScore / 120).clamp(0.0, 1.0);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1B4D3E), Color(0xFF2C7A5E)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF1B4D3E).withOpacity(0.25), blurRadius: 15, offset: const Offset(0, 8)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        body: Column(
+          children: [
+            // بطاقة الرصيد التراكمي الشامل (Total Score)
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF1B4D3E), Color(0xFF2C7A5E)]),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFF1B4D3E).withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 6)),
+                ],
+              ),
+              child: Column(
                 children: [
-                  const Text('مؤشر كفتك اليوم', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Text(
-                    _netScore >= 60 ? 'كفتك رابحة ومباركة ✨' : 'بادر لترجيح الميزان ⚖️',
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('رصيدك التراكمي الشامل', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          const SizedBox(height: 2),
+                          Text(
+                            _lifetimeNetScore >= 0 ? 'ميزانك العام رابح ✨' : 'راجع حساباتك واستغفر ⚠️',
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '${_lifetimeNetScore > 0 ? "+" : ""}$_lifetimeNetScore',
+                        style: TextStyle(
+                          color: _lifetimeNetScore >= 0 ? Colors.white : Colors.redAccent.shade100,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: Colors.white24, height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.arrow_upward, color: Color(0xFF68D391), size: 18),
+                          const SizedBox(width: 4),
+                          Text('إجمالي الحسنات: +$_totalGoodPoints', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      Container(width: 1, height: 16, color: Colors.white24),
+                      Row(
+                        children: [
+                          const Icon(Icons.arrow_downward, color: Color(0xFFFC8181), size: 18),
+                          const SizedBox(width: 4),
+                          Text('إجمالي الزلات: -$_totalBadPoints', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
-              Text(
-                '$_netScore+',
-                style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+            ),
+            // محتوى التبويبات
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildList('daily', Colors.green.shade50),
+                  _buildList('seasons', Colors.amber.shade50),
+                  _buildList('major_good', Colors.teal.shade50),
+                  _buildList('sins', Colors.orange.shade50),
+                  _buildList('major_sins', Colors.red.shade50),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: Colors.white24,
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF68D391)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSeasonBanner() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFDCFCE7)),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.auto_awesome, color: Color(0xFF1B4D3E), size: 22),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'نفحة اليوم: صيام النافلة أو صلة رحم ترفع ميزانك اليوم +25 نقطة إضافية!',
-              style: TextStyle(fontSize: 12, color: Color(0xFF1B4D3E), fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeedTile(ActionItem deed) {
-    return Card(
-      elevation: 0,
-      color: deed.isCompleted ? const Color(0xFFF4F9F6) : Colors.white,
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: deed.isCompleted ? const Color(0xFF1B4D3E).withOpacity(0.3) : Colors.grey.shade200,
-        ),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: deed.isCompleted ? const Color(0xFF1B4D3E) : Colors.grey.shade100,
-          foregroundColor: deed.isCompleted ? Colors.white : Colors.black87,
-          child: Icon(deed.icon, size: 20),
-        ),
-        title: Text(
-          deed.title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            decoration: deed.isCompleted ? TextDecoration.lineThrough : null,
-            color: deed.isCompleted ? Colors.grey[600] : Colors.black87,
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '+${deed.points}',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B4D3E), fontSize: 14),
-            ),
-            const SizedBox(width: 8),
-            Checkbox(
-              value: deed.isCompleted,
-              activeColor: const Color(0xFF1B4D3E),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-              onChanged: (val) {
-                setState(() {
-                  deed.isCompleted = val ?? false;
-                });
-              },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildList(String category, Color bgColor) {
+    final list = _allActions.where((a) => a.category == category).toList();
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      itemCount: list.length,
+      itemBuilder: (ctx, i) {
+        final item = list[i];
+        final isNegative = item.points < 0;
+        return Card(
+          elevation: 0,
+          color: item.isCompleted ? bgColor : Colors.white,
+          margin: const EdgeInsets.only(bottom: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: item.isCompleted ? (isNegative ? Colors.red : const Color(0xFF1B4D3E)) : Colors.grey.shade200),
+          ),
+          child: ListTile(
+            leading: Icon(item.icon, color: isNegative ? Colors.redAccent : const Color(0xFF1B4D3E)),
+            title: Text(item.title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, decoration: item.isCompleted && !isNegative ? TextDecoration.lineThrough : null)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${item.points > 0 ? "+" : ""}${item.points}',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: isNegative ? Colors.red : const Color(0xFF1B4D3E), fontSize: 14),
+                ),
+                Checkbox(
+                  value: item.isCompleted,
+                  activeColor: isNegative ? Colors.red : const Color(0xFF1B4D3E),
+                  onChanged: (val) => _onToggleAction(item, val),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
